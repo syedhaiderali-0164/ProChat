@@ -4,7 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ProChat</title>
-<script src="https://accounts.google.com/gsi/client" async defer></script>
+
+<!-- Firebase SDKs -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
 <style>
   :root{
     --ink:#12181B;
@@ -43,38 +48,20 @@
     transform:scale(.6);
     animation: markIn .7s ease forwards .2s;
   }
-  @keyframes markIn{
-    to{ opacity:1; transform:scale(1); }
-  }
+  @keyframes markIn{ to{ opacity:1; transform:scale(1); } }
   .dev-name{
-    margin-top:26px;
-    font-family: var(--mono);
-    letter-spacing:2px;
-    font-size:13px;
-    color:#8a8f92;
-    opacity:0;
+    margin-top:26px; font-family: var(--mono); letter-spacing:2px;
+    font-size:13px; color:#8a8f92; opacity:0;
     animation: fadeUp .6s ease forwards 1.0s;
   }
-  .dev-name b{
-    color:var(--paper);
-    font-weight:400;
-    letter-spacing:3px;
-  }
+  .dev-name b{ color:var(--paper); font-weight:400; letter-spacing:3px; }
   .app-name{
-    margin-top:10px;
-    font-size:34px;
-    color:var(--paper);
-    opacity:0;
-    letter-spacing:1px;
-    animation: fadeUp .6s ease forwards 1.4s;
+    margin-top:10px; font-size:34px; color:var(--paper); opacity:0;
+    letter-spacing:1px; animation: fadeUp .6s ease forwards 1.4s;
   }
-  @keyframes fadeUp{
-    from{ opacity:0; transform:translateY(10px); }
-    to{ opacity:1; transform:translateY(0); }
-  }
+  @keyframes fadeUp{ from{ opacity:0; transform:translateY(10px); } to{ opacity:1; transform:translateY(0); } }
   .splash-rule{
-    width:0; height:1px; background:var(--accent2);
-    margin-top:18px;
+    width:0; height:1px; background:var(--accent2); margin-top:18px;
     animation: growLine .8s ease forwards 1.8s;
   }
   @keyframes growLine{ to{ width:120px; } }
@@ -86,63 +73,29 @@
     background:var(--paper);
     opacity:0; visibility:hidden;
     transition:opacity .6s ease, visibility .6s ease;
-    z-index:50;
-    padding:20px;
+    z-index:50; padding:20px;
   }
   #login.show{ opacity:1; visibility:visible; }
   .login-card{
-    width:100%; max-width:380px;
-    border:1px solid var(--line);
-    padding:40px 32px;
-    background:var(--paper);
+    width:100%; max-width:380px; border:1px solid var(--line);
+    padding:40px 32px; background:var(--paper);
   }
   .login-card .kicker{
-    font-family:var(--mono);
-    font-size:11px; letter-spacing:2px;
+    font-family:var(--mono); font-size:11px; letter-spacing:2px;
     color:var(--accent); margin-bottom:6px;
   }
-  .login-card h1{
-    font-size:28px; font-weight:400; margin-bottom:8px;
-  }
-  .login-card p.sub{
-    font-size:14px; color:#555; margin-bottom:28px; line-height:1.5;
-  }
-  .field{ margin-bottom:16px; }
-  .field label{
-    display:block; font-size:12px; font-family:var(--mono);
-    color:#555; margin-bottom:6px;
-  }
-  .field input{
-    width:100%; padding:11px 12px;
-    border:1px solid #999; background:#fff;
-    font-family:Georgia, serif; font-size:15px;
-    color:var(--ink);
-  }
-  .field input:focus{ outline:none; border-color:var(--accent); }
-  .gbtn{
-    width:100%; padding:12px;
-    background:var(--ink); color:var(--paper);
-    border:none; font-family:var(--mono); font-size:13px;
-    letter-spacing:1px; cursor:pointer;
-    margin-top:8px;
-    transition: background .2s ease;
-  }
-  .gbtn:hover{ background:var(--accent); }
-  .divider{
-    display:flex; align-items:center; gap:10px;
-    margin:22px 0; font-size:11px; color:#888; font-family:var(--mono);
-  }
-  .divider::before,.divider::after{
-    content:''; flex:1; height:1px; background:#ccc;
-  }
+  .login-card h1{ font-size:28px; font-weight:400; margin-bottom:8px; }
+  .login-card p.sub{ font-size:14px; color:#555; margin-bottom:28px; line-height:1.5; }
+
   .glogin{
-    width:100%; padding:11px; background:#fff;
+    width:100%; padding:12px; background:#fff;
     border:1px solid #999; cursor:pointer;
     display:flex; align-items:center; justify-content:center; gap:10px;
-    font-family:Georgia, serif; font-size:14px;
-    transition: border-color .2s ease;
+    font-family:Georgia, serif; font-size:15px;
+    transition: border-color .2s ease, box-shadow .2s ease;
   }
-  .glogin:hover{ border-color:var(--ink); }
+  .glogin:hover{ border-color:var(--ink); box-shadow: 0 1px 4px rgba(0,0,0,.12); }
+  .glogin:disabled{ opacity:.6; cursor:not-allowed; }
   .gicon{
     width:18px; height:18px;
     background: conic-gradient(from 90deg, #4285F4 0deg 90deg, #34A853 90deg 180deg, #FBBC05 180deg 270deg, #EA4335 270deg 360deg);
@@ -151,19 +104,18 @@
   .login-note{
     margin-top:20px; font-size:12px; color:#888; text-align:center; font-family:var(--mono);
   }
+  .login-error{
+    margin-top:16px; font-size:12px; color:#a33; text-align:center;
+    font-family:var(--mono); display:none;
+  }
 
   /* ================= MAIN APP ================= */
-  #app{
-    display:none;
-    min-height:100vh;
-  }
+  #app{ display:none; min-height:100vh; }
   #app.show{ display:block; }
   header.topbar{
     display:flex; align-items:center; justify-content:space-between;
-    padding:18px 28px;
-    border-bottom:1px solid var(--line);
-    background:var(--paper);
-    position:sticky; top:0; z-index:10;
+    padding:18px 28px; border-bottom:1px solid var(--line);
+    background:var(--paper); position:sticky; top:0; z-index:10;
   }
   .brand{ display:flex; align-items:center; gap:10px; }
   .brand-mark{
@@ -188,32 +140,22 @@
   }
   .logout:hover{ border-color:var(--ink); }
 
-  main{
-    display:flex;
-    height:calc(100vh - 66px);
-  }
+  main{ display:flex; height:calc(100vh - 66px); }
   .sidebar{
-    width:280px; min-width:220px;
-    border-right:1px solid var(--line);
-    overflow-y:auto;
-    padding:20px 0;
+    width:280px; min-width:220px; border-right:1px solid var(--line);
+    overflow-y:auto; padding:20px 0;
   }
   .sidebar .label{
     font-family:var(--mono); font-size:11px; letter-spacing:1.5px;
     color:#888; padding:0 20px 10px;
   }
   .prof-item{
-    display:flex; align-items:center; gap:12px;
-    padding:12px 20px;
-    cursor:pointer;
-    border-left:3px solid transparent;
+    display:flex; align-items:center; gap:12px; padding:12px 20px;
+    cursor:pointer; border-left:3px solid transparent;
     transition: background .15s ease, border-color .15s ease;
   }
   .prof-item:hover{ background:#e3e2da; }
-  .prof-item.active{
-    border-left-color:var(--accent2);
-    background:#e3e2da;
-  }
+  .prof-item.active{ border-left-color:var(--accent2); background:#e3e2da; }
   .prof-icon{
     width:34px; height:34px; border:1px solid var(--ink);
     border-radius:50%; display:flex; align-items:center; justify-content:center;
@@ -222,14 +164,8 @@
   .prof-name{ font-size:15px; }
   .prof-count{ font-size:11px; color:#888; font-family:var(--mono); }
 
-  .chat-area{
-    flex:1; display:flex; flex-direction:column;
-    background:#f6f5f0;
-  }
-  .chat-header{
-    padding:18px 26px; border-bottom:1px solid var(--line);
-    background:var(--paper);
-  }
+  .chat-area{ flex:1; display:flex; flex-direction:column; background:#f6f5f0; }
+  .chat-header{ padding:18px 26px; border-bottom:1px solid var(--line); background:var(--paper); }
   .chat-header h2{ font-size:20px; font-weight:400; }
   .chat-header p{ font-size:12px; color:#888; font-family:var(--mono); margin-top:4px; }
 
@@ -238,12 +174,10 @@
     display:flex; flex-direction:column; gap:16px;
   }
   .msg{ max-width:65%; }
-  .msg .who{
-    font-family:var(--mono); font-size:11px; color:#888; margin-bottom:4px;
-  }
+  .msg .who{ font-family:var(--mono); font-size:11px; color:#888; margin-bottom:4px; }
   .msg .bubble{
     padding:10px 14px; background:#fff; border:1px solid #ddd;
-    font-size:14.5px; line-height:1.5;
+    font-size:14.5px; line-height:1.5; word-wrap:break-word;
   }
   .msg.me{ align-self:flex-end; }
   .msg.me .bubble{ background:var(--ink); color:var(--paper); border-color:var(--ink); }
@@ -264,6 +198,7 @@
     cursor:pointer;
   }
   .composer button:hover{ background:var(--accent); }
+  .composer button:disabled{ opacity:.5; cursor:not-allowed; }
 
   @media (max-width:720px){
     .sidebar{ width:96px; min-width:96px; }
@@ -288,27 +223,15 @@
   <div class="login-card">
     <div class="kicker">PROCHAT</div>
     <h1>Sign in</h1>
-    <p class="sub">Join chat rooms organized by profession. Sign in with your Gmail address to continue.</p>
+    <p class="sub">Join chat rooms organized by profession. Sign in with Google to continue â€” this is required.</p>
 
-    <div class="field">
-      <label for="emailInput">GMAIL ADDRESS</label>
-      <input type="email" id="emailInput" placeholder="yourname@gmail.com">
-    </div>
+    <button class="glogin" id="googleBtn">
+      <span class="gicon"></span>
+      <span>Continue with Google</span>
+    </button>
 
-    <div id="googleBtnContainer" style="display:flex; justify-content:center; margin-bottom:6px;"></div>
-    <div id="googleFallbackNote" style="display:none; font-size:12px; color:#a33; font-family:var(--mono); text-align:center; margin-bottom:10px;">
-      Google Sign-In unavailable here (domain not authorized). Use the form below instead.
-    </div>
-
-    <div class="divider">OR</div>
-
-    <div class="field">
-      <label for="nameInput">DISPLAY NAME</label>
-      <input type="text" id="nameInput" placeholder="How should we show your name?">
-    </div>
-    <button class="gbtn" id="enterBtn">ENTER PROCHAT</button>
-
-    <div class="login-note">This is a demo login — no data leaves your browser.</div>
+    <div class="login-error" id="loginError">Sign-in failed. Please try again.</div>
+    <div class="login-note">Real Google account required. Messages are shared live with everyone in the room.</div>
   </div>
 </div>
 
@@ -335,19 +258,33 @@
     <div class="chat-area">
       <div class="chat-header">
         <h2 id="roomTitle">Software Developer</h2>
-        <p id="roomSub">Room · IT field</p>
+        <p id="roomSub">Room Â· IT field</p>
       </div>
       <div class="messages" id="messages"></div>
       <div class="composer">
-        <input type="text" id="msgInput" placeholder="Type a message...">
-        <button id="sendBtn">SEND</button>
+        <input type="text" id="msgInput" placeholder="Type a message..." disabled>
+        <button id="sendBtn" disabled>SEND</button>
       </div>
     </div>
   </main>
 </div>
 
 <script>
-  // ---- Splash to Login ----
+  // ================= Firebase setup =================
+  const firebaseConfig = {
+    apiKey: "AIzaSyB_z1OGhk9wvLD2p62o8Px9weT_4dKCcj4",
+    authDomain: "prochat-c79bf.firebaseapp.com",
+    projectId: "prochat-c79bf",
+    storageBucket: "prochat-c79bf.firebasestorage.app",
+    messagingSenderId: "29909465736",
+    appId: "1:29909465736:web:da8e9521770cdacf423d3d"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+  const db = firebase.firestore();
+  const provider = new firebase.auth.GoogleAuthProvider();
+
+  // ================= Splash to Login =================
   const splash = document.getElementById('splash');
   const login = document.getElementById('login');
   const app = document.getElementById('app');
@@ -357,101 +294,80 @@
     login.classList.add('show');
   }, 2600);
 
-  // ---- Login handlers ----
-  function enterApp(email, googleName, picture){
-    const typedName = document.getElementById('nameInput').value.trim();
-    const displayEmail = email || document.getElementById('emailInput').value.trim() || 'you@gmail.com';
-    const displayName = googleName || typedName || displayEmail;
-    document.getElementById('userEmailLabel').textContent = displayName;
-    const avatarEl = document.getElementById('userAvatar');
-    if(picture){
-      avatarEl.innerHTML = '';
-      avatarEl.style.backgroundImage = `url(${picture})`;
-      avatarEl.style.backgroundSize = 'cover';
-      avatarEl.style.backgroundPosition = 'center';
-    } else {
-      avatarEl.style.backgroundImage = 'none';
-      avatarEl.textContent = displayName[0].toUpperCase();
-    }
-    login.classList.remove('show');
-    app.classList.add('show');
-  }
+  // ================= Auth =================
+  const googleBtn = document.getElementById('googleBtn');
+  const loginError = document.getElementById('loginError');
 
-  // ---- Real Google Sign-In (Google Identity Services) ----
-  const GOOGLE_CLIENT_ID = "493304153451-h4rvvsv2p4m2phgbbhdr63h0t27vf5t7.apps.googleusercontent.com";
-
-  function decodeJwt(token){
-    try{
-      const base64 = token.split('.')[1].replace(/-/g,'+').replace(/_/g,'/');
-      return JSON.parse(decodeURIComponent(escape(atob(base64))));
-    }catch(e){ return null; }
-  }
-
-  function handleCredentialResponse(response){
-    const payload = decodeJwt(response.credential);
-    if(payload){
-      enterApp(payload.email, payload.name, payload.picture);
-    }
-  }
-
-  window.addEventListener('load', () => {
-    try{
-      if(window.google && google.accounts && google.accounts.id){
-        google.accounts.id.initialize({
-          client_id: GOOGLE_CLIENT_ID,
-          callback: handleCredentialResponse
-        });
-        google.accounts.id.renderButton(
-          document.getElementById('googleBtnContainer'),
-          { theme: 'outline', size: 'large', width: 300, text: 'continue_with' }
-        );
-      } else {
-        document.getElementById('googleFallbackNote').style.display = 'block';
-      }
-    }catch(e){
-      document.getElementById('googleFallbackNote').style.display = 'block';
-    }
-  });
-
-  document.getElementById('enterBtn').addEventListener('click', () => {
-    enterApp(null);
+  googleBtn.addEventListener('click', () => {
+    loginError.style.display = 'none';
+    googleBtn.disabled = true;
+    googleBtn.querySelector('span:last-child').textContent = 'Signing in...';
+    auth.signInWithPopup(provider).catch((err) => {
+      console.error(err);
+      loginError.textContent = 'Sign-in failed: ' + err.message;
+      loginError.style.display = 'block';
+      googleBtn.disabled = false;
+      googleBtn.querySelector('span:last-child').textContent = 'Continue with Google';
+    });
   });
 
   document.getElementById('logoutBtn').addEventListener('click', () => {
-    app.classList.remove('show');
-    login.classList.add('show');
+    auth.signOut();
   });
 
-  // ---- Professions data ----
+  let currentUser = null;
+  let unsubscribeMessages = null;
+
+  auth.onAuthStateChanged((user) => {
+    if(user){
+      currentUser = user;
+      document.getElementById('userEmailLabel').textContent = user.displayName || user.email;
+      const avatarEl = document.getElementById('userAvatar');
+      if(user.photoURL){
+        avatarEl.innerHTML = '';
+        avatarEl.style.backgroundImage = `url(${user.photoURL})`;
+        avatarEl.style.backgroundSize = 'cover';
+        avatarEl.style.backgroundPosition = 'center';
+      } else {
+        avatarEl.style.backgroundImage = 'none';
+        avatarEl.textContent = (user.displayName || user.email)[0].toUpperCase();
+      }
+      login.classList.remove('show');
+      app.classList.add('show');
+      document.getElementById('msgInput').disabled = false;
+      document.getElementById('sendBtn').disabled = false;
+      selectProfession(currentProfessionIndex);
+    } else {
+      currentUser = null;
+      app.classList.remove('show');
+      login.classList.add('show');
+      googleBtn.disabled = false;
+      googleBtn.querySelector('span:last-child').textContent = 'Continue with Google';
+      if(unsubscribeMessages){ unsubscribeMessages(); unsubscribeMessages = null; }
+    }
+  });
+
+  // ================= Professions =================
   const professions = [
-    { name:'Software Developer', icon:'{ }', sub:'IT field', online:12 },
-    { name:'Web Developer', icon:'</>', sub:'IT field', online:9 },
-    { name:'Data Scientist', icon:'∑', sub:'IT field', online:6 },
-    { name:'Cybersecurity Specialist', icon:'⛨', sub:'IT field', online:4 },
-    { name:'UI/UX Designer', icon:'✎', sub:'IT field', online:7 },
-    { name:'Cloud Engineer', icon:'☁', sub:'IT field', online:5 },
-    { name:'Mobile App Developer', icon:'▢', sub:'IT field', online:8 },
-    { name:'Doctor', icon:'✚', sub:'Medical field', online:15 },
-    { name:'Teacher', icon:'✎', sub:'Education field', online:11 },
-    { name:'Lawyer', icon:'⚖', sub:'Legal field', online:5 },
-    { name:'Architect', icon:'△', sub:'Design field', online:3 },
+    { name:'Software Developer', icon:'{ }', sub:'IT field' },
+    { name:'Web Developer', icon:'</>', sub:'IT field' },
+    { name:'Data Scientist', icon:'âˆ‘', sub:'IT field' },
+    { name:'Cybersecurity Specialist', icon:'â›¨', sub:'IT field' },
+    { name:'UI/UX Designer', icon:'âœŽ', sub:'IT field' },
+    { name:'Cloud Engineer', icon:'â˜', sub:'IT field' },
+    { name:'Mobile App Developer', icon:'â–¢', sub:'IT field' },
+    { name:'Doctor', icon:'âœš', sub:'Medical field' },
+    { name:'Teacher', icon:'âœŽ', sub:'Education field' },
+    { name:'Lawyer', icon:'âš–', sub:'Legal field' },
+    { name:'Architect', icon:'â–³', sub:'Design field' },
   ];
+
+  let currentProfessionIndex = 0;
 
   const profList = document.getElementById('profList');
   const roomTitle = document.getElementById('roomTitle');
   const roomSub = document.getElementById('roomSub');
   const messagesEl = document.getElementById('messages');
-
-  const sampleMessages = {
-    'Software Developer': [
-      { who:'Ayesha', text:'Anyone using Rust for backend these days?', me:false },
-      { who:'You', text:'Yeah, switched last month. Compile times are rough but worth it.', me:true },
-    ],
-    'Mobile App Developer': [
-      { who:'Bilal', text:'Flutter or React Native for a new project in 2026?', me:false },
-      { who:'You', text:'Depends on team — Flutter if you want one codebase, tight UI control.', me:true },
-    ],
-  };
 
   function renderProfessions(){
     profList.innerHTML = '';
@@ -462,7 +378,7 @@
         <div class="prof-icon">${p.icon}</div>
         <div>
           <div class="prof-name">${p.name}</div>
-          <div class="prof-count">${p.online} online</div>
+          <div class="prof-count">Live room</div>
         </div>`;
       item.addEventListener('click', () => selectProfession(i));
       profList.appendChild(item);
@@ -470,28 +386,50 @@
   }
 
   function selectProfession(index){
+    currentProfessionIndex = index;
     document.querySelectorAll('.prof-item').forEach((el, i) => {
       el.classList.toggle('active', i === index);
     });
     const p = professions[index];
     roomTitle.textContent = p.name;
-    roomSub.textContent = `Room · ${p.sub} · ${p.online} online`;
-    renderMessages(p.name);
+    roomSub.textContent = `Room Â· ${p.sub} Â· live`;
+    subscribeToRoom(p.name);
   }
 
-  function renderMessages(profName){
+  // ================= Firestore real-time chat =================
+  function subscribeToRoom(profName){
+    if(unsubscribeMessages){ unsubscribeMessages(); unsubscribeMessages = null; }
     messagesEl.innerHTML = '';
-    const msgs = sampleMessages[profName] || [
-      { who:'Room', text:`Welcome to the ${profName} room. Say hello!`, me:false }
-    ];
-    msgs.forEach(m => addMessageToDOM(m.who, m.text, m.me));
-    messagesEl.scrollTop = messagesEl.scrollHeight;
+
+    unsubscribeMessages = db.collection('rooms').doc(profName)
+      .collection('messages')
+      .orderBy('createdAt', 'asc')
+      .limitToLast(100)
+      .onSnapshot((snapshot) => {
+        messagesEl.innerHTML = '';
+        if(snapshot.empty){
+          const div = document.createElement('div');
+          div.className = 'msg';
+          div.innerHTML = `<div class="who">Room</div><div class="bubble">Welcome to the ${profName} room. Say hello!</div>`;
+          messagesEl.appendChild(div);
+          return;
+        }
+        snapshot.forEach((doc) => {
+          const m = doc.data();
+          const isMe = currentUser && m.uid === currentUser.uid;
+          addMessageToDOM(m.who, m.text, isMe);
+        });
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+      }, (err) => {
+        console.error('Room listener error:', err);
+      });
   }
 
   function addMessageToDOM(who, text, me){
     const div = document.createElement('div');
     div.className = 'msg' + (me ? ' me' : '');
-    div.innerHTML = `<div class="who">${who}</div><div class="bubble"></div>`;
+    div.innerHTML = `<div class="who"></div><div class="bubble"></div>`;
+    div.querySelector('.who').textContent = who;
     div.querySelector('.bubble').textContent = text;
     messagesEl.appendChild(div);
   }
@@ -502,17 +440,23 @@
   });
 
   function sendMessage(){
+    if(!currentUser) return;
     const input = document.getElementById('msgInput');
     const text = input.value.trim();
     if(!text) return;
-    const name = document.getElementById('userEmailLabel').textContent;
-    addMessageToDOM(name, text, true);
+    const profName = professions[currentProfessionIndex].name;
     input.value = '';
-    messagesEl.scrollTop = messagesEl.scrollHeight;
+    db.collection('rooms').doc(profName).collection('messages').add({
+      who: currentUser.displayName || currentUser.email,
+      uid: currentUser.uid,
+      text: text,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    }).catch((err) => {
+      console.error('Send failed:', err);
+    });
   }
 
   renderProfessions();
-  renderMessages(professions[0].name);
 </script>
 
 </body>
